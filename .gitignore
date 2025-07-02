@@ -1,0 +1,6 @@
+# Dev environment 
+.venv/
+.vscode/
+
+# Project Environment 
+.env
