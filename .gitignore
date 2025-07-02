@@ -1,6 +1,12 @@
 # Dev environment 
 .venv/
 .vscode/
+.chainlit/
+.files/
+/__pycache__/
 
 # Project Environment 
 .env
+
+models/ 
+data/ 
