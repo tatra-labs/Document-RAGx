@@ -4,6 +4,7 @@
 .chainlit/
 .files/
 /__pycache__/
+*/__pycache__/
 
 # Project Environment 
 .env
