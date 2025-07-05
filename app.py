@@ -1,6 +1,8 @@
 import chainlit as cl 
 import logging 
 
+from engine.assistant import add_message
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s") 
 
 @cl.on_chat_start 
@@ -41,7 +43,7 @@ async def on_message(message: cl.Message):
     ### TODO: Get the response from the pipeline 
 
 
-    ai_message = "TODO: Implement the response generation logic here."
+    ai_message = add_message(human_message)
 
     messages.append(
         {
