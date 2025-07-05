@@ -1,22 +1,26 @@
 import os 
-import json 
+import re
+from uuid import uuid4
 
-from langchain_unstructured import UnstructuredLoader
+from openai import OpenAI 
+from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_pymupdf4llm import PyMuPDF4LLMLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document 
-from langchain_ollama import ChatOllama 
-from openai import OpenAI 
+from langchain_chroma import Chroma 
+import chromadb 
+from chromadb.config import Settings
 
 import instructor 
 from pydantic import BaseModel, Field 
 from typing import List
 
 from engine.prompts import * 
+from engine.retriever import * 
 import settings 
 
 class KeywordsSchema(BaseModel):
-    keywords: list[str] = Field(description="Extracted Keywords")
+    keywords: List[str] = Field(description="Extracted Keywords")
 
 def display_file_structure(data_dir, indent=0):
     """Recursively display the file structure of the given directory."""
@@ -80,6 +84,10 @@ def sanitize_documents(
         
         return [filename, parent_dir]
 
+    def refine_keywords(original_keywords: str):
+        tokens = re.split(r'[-_.,/:\s]+', original_keywords) 
+        return " ".join(tokens)
+    
     new_documents = []
     splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n", "\n", "\t"],
@@ -102,11 +110,14 @@ def sanitize_documents(
                 keywords = set(keywords)
 
                 metadata = {
+                    "document_id": str(uuid4()),
                     "file_path": file_path,
                     "page_number": page_number,
-                    "keywords": keywords
+                    "keywords": refine_keywords(" ".join(list(keywords)))
                 }
-                new_documents.append(Document(page_content=chunk, metadata=metadata))
+                new_documents.append(Document(
+                    page_content="This is the content that belongs to " + " ".join(category_detail) + chunk, 
+                    metadata=metadata))
 
     return new_documents
 
@@ -151,5 +162,11 @@ def preprocess(data_dir):
     chunks = sanitize_documents(initial_documents)
 
     print(len(chunks), "chunks created from the documents.")
-            
 
+    # Vector Store  
+    ## Persistence
+    uuids = [str(uuid4()) for _ in range(len(chunks))]
+    vector_store.add_documents(
+        documents=chunks,
+        ids=uuids
+    )
