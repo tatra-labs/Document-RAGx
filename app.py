@@ -5,6 +5,17 @@ from engine.assistant import add_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s") 
 
+
+async def create_pdf_element(file_path, page_number):
+    file_name = file_path.split("/")[-1]  # Extract the file name from the path
+    pdf_element = cl.Pdf(
+        name=file_name,
+        path=file_path,
+        display="inline",  # Options: 'inline', 'side', 'page'
+        page=page_number
+    )
+    return pdf_element
+
 @cl.on_chat_start 
 async def on_chat_start():
     """Initialize the chat session.""" 
@@ -43,7 +54,8 @@ async def on_message(message: cl.Message):
     ### TODO: Get the response from the pipeline 
 
 
-    ai_message = add_message(human_message)
+    ai_message, file_path, page_number = add_message(human_message)
+    pdf_element = await create_pdf_element(file_path, page_number)
 
     messages.append(
         {
@@ -53,7 +65,7 @@ async def on_message(message: cl.Message):
     )
     cl.user_session.set("messages", messages)
 
-    response_msg = cl.Message(content=ai_message)
+    response_msg = cl.Message(content=ai_message, elements=[pdf_element])
     
     await response_msg.send()
 

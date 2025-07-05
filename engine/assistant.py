@@ -9,11 +9,15 @@ import settings
 
 llm = ChatOllama(model=str(settings.LLM_MODEL), base_url=str(settings.LLM_PROVIDER))
 
+
 def add_message(human_message: str):
     # Extracting keyword 
     result = naive_retrieve(human_message)
     main_context = result[0][0].page_content
     sub_context = result[1][0].page_content 
+
+    file_path = result[0][0].metadata["file_path"]
+    page_number = result[0][0].metadata["page_number"]
 
     try: 
         qa_prompt = ChatPromptTemplate.from_messages(
@@ -37,4 +41,4 @@ def add_message(human_message: str):
         response = qa_chain.invoke({"human_message": [HumanMessage(content=human_message)]})
     
 
-    return response.content
+    return [response.content, file_path, page_number]
