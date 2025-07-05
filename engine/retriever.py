@@ -4,15 +4,7 @@ from datasketch import MinHash, MinHashLSHForest
 from openai import OpenAI
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_chroma import Chroma 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.storage import LocalFileStore 
-from langchain.storage._lc_store import create_kv_docstore
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
-from langchain.retrievers import EnsembleRetriever
-from langchain.retrievers.multi_vector import SearchType
-from langchain_community.retrievers import BM25Retriever
 
 import chromadb 
 from chromadb.config import Settings
@@ -20,8 +12,6 @@ from chromadb.config import Settings
 import instructor 
 from pydantic import BaseModel, Field 
 from typing import List
-
-from rank_bm25 import BM25Okapi
 
 from engine.prompts import * 
 import settings

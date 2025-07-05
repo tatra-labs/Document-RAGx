@@ -1,5 +1,4 @@
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage
 from langchain_ollama import ChatOllama
 

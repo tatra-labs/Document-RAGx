@@ -3,13 +3,9 @@ import re
 from uuid import uuid4
 
 from openai import OpenAI 
-from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_pymupdf4llm import PyMuPDF4LLMLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document 
-from langchain_chroma import Chroma 
-import chromadb 
-from chromadb.config import Settings
 
 import instructor 
 from pydantic import BaseModel, Field 
