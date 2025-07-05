@@ -1,6 +1,5 @@
 import os 
-import argparse 
-import settings 
+import argparse  
 
 parser = argparse.ArgumentParser(description="Preprocess documents for RAGx") 
 
