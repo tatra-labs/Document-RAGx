@@ -30,3 +30,16 @@ This project aims to provide the end-to-end interface for RAG from documents.
 
     - chainlit 
 
+
+## How to use v1.0 
+
+### Preprocess 
+
+- Add documents in directory `./data` 
+- Make sure directory `./indices` exists
+- Run `python preprocess.py`
+
+### Execute the app 
+
+- Activate virtual environment `.venv\Scripts\activate`
+- chainlit run app.py 
