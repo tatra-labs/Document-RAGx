@@ -1,6 +1,7 @@
 import os 
 import re
 from uuid import uuid4
+from tqdm import tqdm 
 
 from openai import OpenAI 
 from langchain_pymupdf4llm import PyMuPDF4LLMLoader
@@ -36,7 +37,7 @@ def display_file_structure(data_dir, indent=0):
 def load_documents(snapshot, mode="page"):
     """Load documents from the specified directory."""
     doc_elements = []
-    for file_path in snapshot:
+    for file_path in tqdm(snapshot, desc="Loading documents"):
         try:
             loader = PyMuPDF4LLMLoader(
                 file_path, 
@@ -168,11 +169,14 @@ def preprocess(data_dir, mode):
 
     # Vector Store  
     ## Persistence
+    print("Adding chunks to vector store...")
     uuids = [str(uuid4()) for _ in range(len(chunks))]
     vector_store.add_documents(
         documents=chunks,
         ids=uuids
     )
-    
-    if mode == "add":
+
+    if mode == "new":
+        save_snapshot(snapshot)
+    elif mode == "add":
         save_snapshot(new_snapshot)
