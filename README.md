@@ -39,6 +39,10 @@ This project aims to provide the end-to-end interface for RAG from documents.
 - Make sure directory `./indices` exists
 - Run `python preprocess.py`
 
+    - If you preprocess from scratch, run `python preprocess.py --mode new` 
+    - If you continue preprocessing, run `python preprocess.py --mode add`
+
+
 ### Execute the app 
 
 - Activate virtual environment `.venv\Scripts\activate`
