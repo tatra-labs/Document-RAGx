@@ -53,6 +53,7 @@ keywords_list = [
     for doc in raw_documents
 ]
 
+
 # For Keyword Search, set up forest  
 forest = MinHashLSHForest(num_perm=int(settings.NUM_PERM))
 doc_signatures = [] 
@@ -64,6 +65,53 @@ for i, keywords in enumerate(keywords_list):
     forest.add(i, m) 
 
 forest.index() 
+
+def refresh_all():
+    global persistent_client, collection, vector_store, raw_docs, raw_documents, forest, doc_signatures
+
+    # Vector store
+    persistent_client = chromadb.PersistentClient(
+        path=str(settings.INDICES), 
+        settings=Settings(allow_reset=True)
+    )
+    collection = persistent_client.get_or_create_collection(
+        name=str(settings.COLLECTION_NAME),
+        metadata={
+            "hnsw:space": "cosine"
+        }
+    )
+    vector_store = Chroma(
+        client=persistent_client,
+        collection_name=collection.name,
+        embedding_function=embedding_model
+    )
+
+    # Raw documents 
+    raw_docs = vector_store.get(include=["documents", "metadatas"])
+    raw_documents = [
+        Document(page_content=doc, metadata=meta)
+        for doc, meta in zip(raw_docs["documents"], raw_docs["metadatas"])
+    ]
+
+    # Keywords list 
+    preprocess_func = lambda x: x.split() 
+    keywords_list = [
+        preprocess_func(doc.metadata.get("keywords", [])) 
+        for doc in raw_documents
+    ]
+
+
+    # For Keyword Search, set up forest  
+    forest = MinHashLSHForest(num_perm=int(settings.NUM_PERM))
+    doc_signatures = [] 
+    for i, keywords in enumerate(keywords_list):
+        m = MinHash(num_perm=int(settings.NUM_PERM)) 
+        for kw in keywords:
+            m.update(kw.encode('utf8')) 
+        doc_signatures.append(m) 
+        forest.add(i, m) 
+
+    forest.index() 
 
 def extract_keywords_from_query(query: str, model=settings.LLM_MODEL):
     from openai.types.chat import ChatCompletionMessageParam

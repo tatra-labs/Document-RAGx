@@ -1,21 +1,30 @@
 import os 
-import argparse  
+import argparse 
+
+import settings 
 
 parser = argparse.ArgumentParser(description="Preprocess documents for RAGx") 
 
 # Arguments 
 parser.add_argument(
-    "--data_dir",
+    '--data_dir',
     type=str,
-    default="./data",
-    help="Directory containing the documents to preprocess.",
+    default=str(settings.DATA_DIR),
+    help='Directory containing the documents to preprocess.',
 ) 
 parser.add_argument(
-    "--strategy",
+    '--strategy',
     type=str,
-    default="naive",
-    help="Preprocessing strategy to use."
+    default='naive',
+    help='Preprocessing strategy to use.'
 )
+parser.add_argument(
+    '--mode',
+    choices=['new', 'add'],
+    default='add',
+    help='Preprocessing mode, new: create indices from scratch, add: add indices for newly created documents'
+)
+
 
 args = parser.parse_args() 
 
@@ -26,7 +35,7 @@ def main():
     # Import the preprocessing module dynamically based on the strategy
     try:
         preprocess_module = __import__(f"preprocess.preprocess_{args.strategy}", fromlist=["preprocess"])
-        preprocess_module.preprocess(args.data_dir)
+        preprocess_module.preprocess(args.data_dir, args.mode)
     except ImportError as e:
         raise ImportError(f"Preprocessing strategy '{args.strategy}' is not implemented.") from e
 
