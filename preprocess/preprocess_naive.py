@@ -17,6 +17,14 @@ from engine.prompts import *
 from engine.retriever import * 
 import settings 
 
+client = instructor.from_openai(
+    OpenAI(
+        base_url=str(settings.INSTRUCTOR_BASE_URL),
+        api_key=str(settings.INSTRUCTOR_API_KEY),  # required, but unused
+    ),
+    mode=instructor.Mode.JSON,
+)
+
 class KeywordsSchema(BaseModel):
     keywords: List[str] = Field(description="Extracted Keywords")
 
@@ -124,20 +132,18 @@ def extract_keywords(content: str, model=settings.LLM_MODEL):
         {"role": "system", "content": EXTRACT_KEYWORDS_SYSTEM_PROMPT},
         {"role": "user", "content": content}
     ]
-    client = instructor.from_openai(
-        OpenAI(
-            base_url=str(settings.INSTRUCTOR_BASE_URL),
-            api_key=str(settings.INSTRUCTOR_API_KEY),  # required, but unused
-        ),
-        mode=instructor.Mode.JSON,
-    )
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        response_model=KeywordsSchema,
-    )
 
-    return response.keywords
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            response_model=KeywordsSchema,
+        )
+        keywords = response.keywords 
+    except:
+        keywords = []
+        
+    return keywords
 
 def preprocess(data_dir, mode):
     print(f"Preprocessing documents in {data_dir} using naive strategy now...")
