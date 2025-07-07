@@ -17,6 +17,14 @@ from engine.prompts import *
 from engine.retriever import * 
 import settings 
 
+client = instructor.from_openai(
+    OpenAI(
+        base_url=str(settings.INSTRUCTOR_BASE_URL),
+        api_key=str(settings.INSTRUCTOR_API_KEY),  # required, but unused
+    ),
+    mode=instructor.Mode.JSON,
+)
+
 class KeywordsSchema(BaseModel):
     keywords: List[str] = Field(description="Extracted Keywords")
 
@@ -90,8 +98,8 @@ def sanitize_documents(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap
     )
-    for document in documents:
-        for page in document:
+    for document in tqdm(documents, desc="Processing documents"):
+        for page in tqdm(document, desc="Processing pages", leave=False): 
             file_path = page.metadata.get("source", "unknown_source") 
             page_number = page.metadata.get("page", "unknown_page")
             page_content = page.page_content.strip()
@@ -124,20 +132,18 @@ def extract_keywords(content: str, model=settings.LLM_MODEL):
         {"role": "system", "content": EXTRACT_KEYWORDS_SYSTEM_PROMPT},
         {"role": "user", "content": content}
     ]
-    client = instructor.from_openai(
-        OpenAI(
-            base_url=str(settings.INSTRUCTOR_BASE_URL),
-            api_key=str(settings.INSTRUCTOR_API_KEY),  # required, but unused
-        ),
-        mode=instructor.Mode.JSON,
-    )
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        response_model=KeywordsSchema,
-    )
 
-    return response.keywords
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            response_model=KeywordsSchema,
+        )
+        keywords = response.keywords 
+    except:
+        keywords = []
+
+    return keywords
 
 def preprocess(data_dir, mode):
     print(f"Preprocessing documents in {data_dir} using naive strategy now...")
@@ -157,24 +163,26 @@ def preprocess(data_dir, mode):
         initial_documents = load_documents(changed_snapshot)
 
     if not initial_documents:
-        print("No documents found to preprocess.")
+        print("No document found to preprocess.")
         return
 
-    print(len(initial_documents), "documents loaded for preprocessing.") 
+    print(len(initial_documents), "Documents loaded for preprocessing.") 
     
     # Split the pages into chunks 
+    print("Preparing chunks from documents...")
+
     chunks = sanitize_documents(initial_documents)
 
-    print(len(chunks), "chunks created from the documents.")
+    print(len(chunks), "Chunks created from the documents.")
 
     # Vector Store  
     ## Persistence
     print("Adding chunks to vector store...")
-    uuids = [str(uuid4()) for _ in range(len(chunks))]
-    vector_store.add_documents(
-        documents=chunks,
-        ids=uuids
-    )
+    for chunk in tqdm(chunks, desc="Adding chunks"):
+        vector_store.add_documents(
+            documents=[chunk],
+            ids=[str(uuid4())]
+        )
 
     if mode == "new":
         save_snapshot(snapshot)
