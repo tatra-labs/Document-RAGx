@@ -21,6 +21,9 @@ DOCUMENT_STORE_PATH = Path(str(INDICES)) / "document_store"
 
 NUM_PERM=128 
 
+DATA_DIR = env("DATA_DIR", default="./data")
+SNAPSHOT_FILE = env("SNAPSHOT_FILE", default="./preprocess/snapshot.json")
+
 chunk_size=1000 
 chunk_overlap=200
 
