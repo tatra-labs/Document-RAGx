@@ -133,9 +133,19 @@ def sparse_retrieve(keywords_from_query):
 def naive_retrieve(human_message: str):
     k = int(settings.k)
     weights = [0.1, 0.9]
-    keywords_from_query = extract_keywords_from_query(human_message) 
-    sparse_retriever_result = sparse_retrieve(keywords_from_query)
+    
+    try:
+        keywords_from_query = extract_keywords_from_query(human_message) 
+    except Exception as e:
+        print("Keywords extraction from query failed...")
+        keywords_from_query = [] 
+
     dense_retriever_result = vector_store.similarity_search_with_score(human_message, k=k)
+
+    if keywords_from_query:
+        sparse_retriever_result = sparse_retrieve(keywords_from_query)
+    else:
+        return dense_retriever_result
 
     score_dict = defaultdict(float)
     retrieved_documents = {}
@@ -153,6 +163,5 @@ def naive_retrieve(human_message: str):
 
     combined = [(retrieved_documents[id], score) for id, score in score_dict.items()]
     sorted_combined = sorted(combined, key=lambda x: x[1], reverse=True)
-
 
     return sorted_combined
