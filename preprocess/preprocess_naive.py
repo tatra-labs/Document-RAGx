@@ -11,6 +11,7 @@ import instructor
 from pydantic import BaseModel, Field 
 from typing import List
 
+from preprocess.snapshot import * 
 from engine.prompts import * 
 from engine.retriever import * 
 import settings 
@@ -32,24 +33,22 @@ def display_file_structure(data_dir, indent=0):
     except PermissionError:
         print('    ' * indent + '⚠️ [Access Denied]')
 
-def load_documents(data_dir, mode="page"):
+def load_documents(snapshot, mode="page"):
     """Load documents from the specified directory."""
     doc_elements = []
-    for root, _, files in os.walk(data_dir):
-        for file in files:
-            file_path = os.path.join(root, file)
-            try:
-                loader = PyMuPDF4LLMLoader(
-                    file_path, 
-                    mode="page",) 
-                data = loader.load() 
-                if data:
-                    doc_elements.append(data)
-                    print(f"Loaded {len(data)} elements from {file_path}")
-                else:
-                    print(f"No data found in {file_path}")
-            except Exception as e:
-                print(f"Error reading {file_path}: {e}")
+    for file_path in snapshot:
+        try:
+            loader = PyMuPDF4LLMLoader(
+                file_path, 
+                mode="page",) 
+            data = loader.load() 
+            if data:
+                doc_elements.append(data)
+                print(f"Loaded {len(data)} pages from {file_path}")
+            else:
+                print(f"No data found in {file_path}")
+        except Exception as e:
+            print(f"Error reading {file_path}: {e}")
     return doc_elements
 
 def sanitize_documents(
@@ -139,14 +138,22 @@ def extract_keywords(content: str, model=settings.LLM_MODEL):
 
     return response.keywords
 
-def preprocess(data_dir):
+def preprocess(data_dir, mode):
     print(f"Preprocessing documents in {data_dir} using naive strategy now...")
 
     # Display the file structure of the data directory 
     display_file_structure(data_dir)
 
     # Load pages from the documents 
-    initial_documents = load_documents(data_dir)
+    if mode == "new":
+        snapshot = take_snapshot(root_dir=data_dir)
+        save_snapshot(snapshot=snapshot)
+        initial_documents = load_documents(snapshot)
+    elif mode == "add":
+        new_snapshot = take_snapshot(root_dir=data_dir) 
+        old_snapshot = load_snapshot()
+        changed_snapshot = find_new_files(old_snapshot, new_snapshot) 
+        initial_documents = load_documents(changed_snapshot)
 
     if not initial_documents:
         print("No documents found to preprocess.")
@@ -166,3 +173,6 @@ def preprocess(data_dir):
         documents=chunks,
         ids=uuids
     )
+    
+    if mode == "add":
+        save_snapshot(new_snapshot)
